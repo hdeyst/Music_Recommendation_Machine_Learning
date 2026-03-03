@@ -208,3 +208,6 @@ __marimo__/
 
 # spotify api keys 
 credentials.json
+
+# ignore data files
+*.csv
