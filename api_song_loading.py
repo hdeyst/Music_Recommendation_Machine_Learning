@@ -2,22 +2,36 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import json
 
-CLIENT_ID     = "7e3a150dea7f4dd3a7662f87be608726"
-CLIENT_SECRET = "05fe1f38ef1d4261b61b313c82029d42"
-REDIRECT_URI  = "http://127.0.0.1:8888/callback"
-SCOPE         = "user-top-read" #will have to learn the options
+import http.client
+
+conn = http.client.HTTPSConnection("api.reccobeats.com")
+payload = ''
+headers = {
+  'Accept': 'application/json'
+}
+
+# get credentials from the json file
+cred_file = "credentials.json"
+with open(cred_file, 'r') as f:
+    data = json.load(f)
 
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    redirect_uri=REDIRECT_URI,
-    scope=SCOPE
+    client_id=data["CLIENT_ID"],
+    client_secret=data["CLIENT_SECRET"],
+    redirect_uri=data["REDIRECT_URI"],
+    scope=data["SCOPE"]
 ))
 
-top_tracks = sp.current_user_top_tracks(time_range='long_term', limit=20)
+
+top_tracks = sp.current_user_top_artists(time_range='long_term', limit=20)
 
 print("Your Top Tracks:")
 for i, track in enumerate(top_tracks['items']):
+    #print(track['id'])
     artist_name = track['artists'][0]['name']
     track_name = track['name']
+
+
+ 
+    #features = GET /audio-features/{track['id']}
     print(f"{i+1}. {artist_name} - {track_name}")
