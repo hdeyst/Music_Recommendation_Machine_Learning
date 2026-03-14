@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.metrics import pairwise_distances_argmin
+from sklearn.metrics import pairwise_distances_argmin, silhouette_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 # TODO: make this not hard coded
-K_VAL = 3
+K_VAL_MIN = 3
+K_VAL_MAX = 15
 
 
 def prepare_data():
@@ -24,6 +25,22 @@ def prepare_data():
     feature_names = df.columns.tolist()
     return df, data, feature_names
 
+def choose_k(scaled_x):
+    scores = []
+
+    for k in range(K_VAL_MIN, K_VAL_MAX + 1):
+        km = KMeans(n_clusters=k, random_state=64, n_init=10)
+        predicted_lbls = km.fit_predict(scaled_x)
+        scores.append(silhouette_score(scaled_x, predicted_lbls))
+
+    best_kval = K_VAL_MIN + int(np.argmax(scores))
+    kvals = list(range(K_VAL_MIN, K_VAL_MAX + 1))
+
+    plt.plot(kvals, scores)
+    plt.show()
+    print("The best k-value is: ", best_kval)
+    return best_kval
+
 
 def build_kmeans():
     df, X, features = prepare_data()
@@ -35,7 +52,8 @@ def build_kmeans():
     print(f"Scaled data {scaled_X.shape}: \n{scaled_X}")
 
     # compute clustering w/ kmeans
-    kmeans = KMeans(init="random", n_clusters=K_VAL, n_init=10, random_state=64)
+    k_val = choose_k(scaled_X)
+    kmeans = KMeans(init="random", n_clusters=k_val, n_init=10, random_state=64)
     kmeans.fit(scaled_X)
     k_means_cluster_centers = kmeans.cluster_centers_
     k_means_labels = pairwise_distances_argmin(scaled_X, k_means_cluster_centers)
@@ -48,11 +66,12 @@ def build_kmeans():
     fig, ax = plt.subplots(figsize=(10, 8))
     colors = plt.colormaps.get_cmap("tab20")
 
-    for c in range(K_VAL):
+    for c in range(k_val):
         mask = k_means_labels == c
         ax.scatter(coords[mask, 0], coords[mask, 1], color=colors(c), label=f"cluster {c}")
 
     plt.show()
+    plt.savefig("figures/kmeans_clusters.png")
 
 
 
