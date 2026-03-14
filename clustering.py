@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+from matplotlib.pyplot import tight_layout
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin, silhouette_score
 from sklearn.preprocessing import StandardScaler
@@ -40,6 +41,7 @@ def choose_k(scaled_x):
     plt.xlabel("Number of Clusters")
     plt.ylabel("Sum Squared Error")
     plt.plot(kvals, errors)
+    plt.tight_layout()
     plt.savefig("figures/choose_k_value.png")
     plt.show()
 
@@ -75,9 +77,8 @@ def build_kmeans():
         mask = k_means_labels == c
         ax.scatter(coords[mask, 0], coords[mask, 1], color=colors(c), label=f"cluster {c}")
 
-    plt.show()
     plt.savefig("figures/kmeans_clusters.png")
-
+    plt.show()
 
 build_kmeans()
 
