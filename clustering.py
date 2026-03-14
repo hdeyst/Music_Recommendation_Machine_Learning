@@ -9,7 +9,7 @@ from sklearn.decomposition import PCA
 
 # TODO: make this not hard coded
 K_VAL_MIN = 3
-K_VAL_MAX = 15
+K_VAL_MAX = 10
 
 
 def prepare_data():
@@ -26,18 +26,23 @@ def prepare_data():
     return df, data, feature_names
 
 def choose_k(scaled_x):
-    scores = []
+    # calculate optimal num clusters
+    errors = []
+    for i in range(K_VAL_MIN, K_VAL_MAX + 1):
+        kmeans = KMeans(n_clusters=i, init="random", n_init=10, random_state=64)
+        kmeans.fit_predict(scaled_x)
+        errors.append(kmeans.inertia_)
 
-    for k in range(K_VAL_MIN, K_VAL_MAX + 1):
-        km = KMeans(n_clusters=k, random_state=64, n_init=10)
-        predicted_lbls = km.fit_predict(scaled_x)
-        scores.append(silhouette_score(scaled_x, predicted_lbls))
-
-    best_kval = K_VAL_MIN + int(np.argmax(scores))
+    best_kval = K_VAL_MIN + int(np.argmax(errors))
     kvals = list(range(K_VAL_MIN, K_VAL_MAX + 1))
 
-    plt.plot(kvals, scores)
+    plt.xticks(kvals)
+    plt.xlabel("Number of Clusters")
+    plt.ylabel("Sum Squared Error")
+    plt.plot(kvals, errors)
+    plt.savefig("figures/choose_k_value.png")
     plt.show()
+
     print("The best k-value is: ", best_kval)
     return best_kval
 
@@ -72,9 +77,6 @@ def build_kmeans():
 
     plt.show()
     plt.savefig("figures/kmeans_clusters.png")
-
-
-
 
 
 build_kmeans()
