@@ -9,8 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 # TODO: make this not hard coded
-K_VAL_MIN = 3
-K_VAL_MAX = 10
+K_VAL_MIN = 2
+K_VAL_MAX = 20
 
 
 def prepare_data():
@@ -20,27 +20,28 @@ def prepare_data():
     df = df.dropna()
 
     # drop categorical cols
-    df = df.drop(columns=['track_id', 'name', 'artist', 'spotify_preview_url', 'spotify_id', 'tags', 'genre'])
+    feature_df = df.drop(columns=['track_id', 'name', 'artist', 'spotify_preview_url', 'spotify_id', 'tags', 'genre'])
+    song_df = df[['track_id', 'name', 'artist', 'spotify_preview_url', 'spotify_id', 'tags', 'genre']]
 
-    data = df.iloc[1:, :]
-    feature_names = df.columns.tolist()
-    return df, data, feature_names
+    data = feature_df.iloc[1:, :]
+    feature_names = feature_df.columns.tolist()
+    return feature_df, song_df, data, feature_names
 
 def choose_k(scaled_x):
     # calculate optimal num clusters
-    errors = []
+    inertias = []
     for i in range(K_VAL_MIN, K_VAL_MAX + 1):
         kmeans = KMeans(n_clusters=i, init="random", n_init=10, random_state=64)
         kmeans.fit_predict(scaled_x)
-        errors.append(kmeans.inertia_)
+        inertias.append(kmeans.inertia_)
 
-    best_kval = K_VAL_MIN + int(np.argmax(errors))
+    best_kval = K_VAL_MIN + int(np.argmax(inertias))
     kvals = list(range(K_VAL_MIN, K_VAL_MAX + 1))
 
     plt.xticks(kvals)
     plt.xlabel("Number of Clusters")
     plt.ylabel("Sum Squared Error")
-    plt.plot(kvals, errors)
+    plt.plot(kvals, inertias)
     plt.tight_layout()
     plt.savefig("figures/choose_k_value.png")
     plt.show()
@@ -49,21 +50,20 @@ def choose_k(scaled_x):
     return best_kval
 
 
-def build_kmeans():
-    df, X, features = prepare_data()
-    print(X)
-
+def build_kmeans(df, X):
     # scale features so each has equal weight
     scaled_X = StandardScaler().fit_transform(X)
-    print(f"{len(features)} features: {features}")
     print(f"Scaled data {scaled_X.shape}: \n{scaled_X}")
 
-    # compute clustering w/ kmeans
-    k_val = choose_k(scaled_X)
+    # TODO: k_val = choose_k(scaled_X)
+    k_val = 3
     kmeans = KMeans(init="random", n_clusters=k_val, n_init=10, random_state=64)
     kmeans.fit(scaled_X)
     k_means_cluster_centers = kmeans.cluster_centers_
     k_means_labels = pairwise_distances_argmin(scaled_X, k_means_cluster_centers)
+    # df['cluster'] = kmeans.labels_
+    print(len(k_means_labels))
+    print(len(kmeans.labels_))
 
     # reduce dimensions for graphing
     pca = PCA(n_components=2, random_state=64)
@@ -80,8 +80,21 @@ def build_kmeans():
     plt.savefig("figures/kmeans_clusters.png")
     plt.show()
 
-build_kmeans()
+    return df, scaled_X
 
 
+def rec_engine(song_title, df, scaled_X):
+    song_idx = df[df["name"] == song_title].index[0]
+    cluster = df.loc[song_idx, ["cluster"]]
+    print(cluster)
 
 
+def main():
+    feature_df, song_df, data, feature_names = prepare_data()
+    print(f"{len(feature_names)} features: {feature_names}")
+
+
+    df, scaled_x = build_kmeans(feature_df, data)
+    # rec_engine("Mr. Brightside", df, scaled_x)
+
+main()
