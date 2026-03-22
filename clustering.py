@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.pyplot import tight_layout
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin, silhouette_score
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
 from sklearn.decomposition import PCA
 
 # TODO: make this not hard coded
@@ -52,11 +52,19 @@ def choose_k(scaled_x):
 
 def build_kmeans(df, X):
     # scale features so each has equal weight
-    scaled_X = StandardScaler().fit_transform(X)
-    print(f"Scaled data {scaled_X.shape}: \n{scaled_X}")
+    features = df.columns.tolist()
+    scaled_X = Normalizer().fit_transform(X)
 
-    # TODO: k_val = choose_k(scaled_X)
-    k_val = 3
+    print(f"Scaled data {scaled_X.shape}: \n{scaled_X}")
+    # convert array into dataframe
+    DF = pd.DataFrame(scaled_X)
+    DF.columns = features
+
+    # save the dataframe as a csv file
+    DF.to_csv("data/scaled_data.csv")
+
+    k_val = choose_k(scaled_X)
+    # k_val = 3
     kmeans = KMeans(init="random", n_clusters=k_val, n_init=10, random_state=64)
     kmeans.fit(scaled_X)
     k_means_cluster_centers = kmeans.cluster_centers_
