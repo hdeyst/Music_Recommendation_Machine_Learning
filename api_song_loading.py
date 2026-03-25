@@ -4,6 +4,11 @@ import json
 import requests
 import http.client
 import time
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import cosine_similarity
+
 
 conn = http.client.HTTPSConnection("api.reccobeats.com")
 payload = ''
@@ -51,3 +56,23 @@ for i, (track, feat) in enumerate(zip(top_tracks['items'], features)):
     danceability = feat.get('danceability')
     tempo = feat.get('tempo')
     print(f"{i+1}. {artist_name} - {track_name} | energy: {energy}, danceability: {danceability}, tempo: {tempo}")
+
+df = pd.read_csv('kaggle_dataset/tracks_features.csv')
+print(df.head())
+
+FEATURES = ['energy', 'danceability', 'tempo', 'acousticness', 
+            'instrumentalness', 'liveness', 'loudness', 'speechiness', 'valence']
+
+scaler = StandardScaler()
+df_scaled = scaler.fit_transform(df[FEATURES])  
+
+top_df = pd.DataFrame(features)[FEATURES].fillna(0)
+top_scaled = scaler.transform(top_df)            
+
+similarities = cosine_similarity(top_scaled, df_scaled)
+
+
+for i, track in enumerate(top_tracks['items']):
+    top_indices = similarities[i].argsort()[::-1][:10]
+    print(f"\nRecommendations for {track['name']}:")
+    print(df.iloc[top_indices][['name', 'artists']])
