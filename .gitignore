@@ -208,6 +208,7 @@ __marimo__/
 
 # spotify api keys 
 credentials.json
+hannah_credentials.json
 
 # ignore data files
 *.csv
