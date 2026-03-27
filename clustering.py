@@ -2,11 +2,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import kmodes
 from matplotlib.pyplot import tight_layout
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin, silhouette_score
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
 from sklearn.decomposition import PCA
+from statsmodels.tools import categorical
 
 # TODO: make this not hard coded
 K_VAL_MIN = 2
@@ -97,7 +99,7 @@ def rec_engine(song_title, df, scaled_X):
     print(cluster)
 
 
-def main():
+def kmeans():
     feature_df, song_df, data, feature_names = prepare_data()
     print(f"{len(feature_names)} features: {feature_names}")
 
@@ -105,4 +107,34 @@ def main():
     df, scaled_x = build_kmeans(feature_df, data)
     # rec_engine("Mr. Brightside", df, scaled_x)
 
-main()
+# ===========================================================
+
+# attempt 2
+# want euclidean distance on normalized numerical features
+# hamming distance on categorical features
+
+# get first 50 songs from dataset for practice
+def get_samples(filename):
+    df = pd.read_csv(filename, nrows=50)
+    df = df.drop_duplicates(subset=['id'])
+    df = df.dropna()
+
+    categorical_cols = ['album', 'artists', 'explicit', 'release_date']
+
+    numeric_cols = ['danceability', 'energy',
+           'key', 'loudness', 'mode', 'speechiness', 'acousticness',
+           'instrumentalness', 'liveness', 'valence', 'tempo', 'duration_ms',
+           'time_signature', 'year']
+
+    # extract data values and features from dfs
+    df[numeric_cols] = StandardScaler().fit_transform(df[numeric_cols])
+
+    # make categorical data all string types
+    df[categorical_cols] = df[categorical_cols].astype(str)
+
+    # combine numeric & categorical dfs
+    X = df[numeric_cols + categorical_cols].to_numpy()
+    print(X)
+
+
+get_samples("data/tracks_features.csv")

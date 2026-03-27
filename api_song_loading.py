@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 
-
+# TODO: make this into a function so its easier to access from other files
 conn = http.client.HTTPSConnection("api.reccobeats.com")
 payload = ''
 headers = {
