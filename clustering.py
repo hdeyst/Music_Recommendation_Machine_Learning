@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import kmodes
+from kmodes.kprototypes import KPrototypes
 from matplotlib.pyplot import tight_layout
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances_argmin, silhouette_score
@@ -121,10 +121,10 @@ def get_samples(filename):
 
     categorical_cols = ['album', 'artists', 'explicit', 'release_date']
 
-    numeric_cols = ['danceability', 'energy',
-           'key', 'loudness', 'mode', 'speechiness', 'acousticness',
-           'instrumentalness', 'liveness', 'valence', 'tempo', 'duration_ms',
-           'time_signature', 'year']
+    numeric_cols = ['danceability', 'energy', 'key', 'loudness', 'mode',
+                    'speechiness', 'acousticness', 'instrumentalness',
+                    'liveness', 'valence', 'tempo', 'duration_ms',
+                    'time_signature', 'year']
 
     # extract data values and features from dfs
     df[numeric_cols] = StandardScaler().fit_transform(df[numeric_cols])
@@ -134,7 +134,27 @@ def get_samples(filename):
 
     # combine numeric & categorical dfs
     X = df[numeric_cols + categorical_cols].to_numpy()
-    print(X)
+    # print(X)
+    cat_cols_idx = [i for i in range(len(numeric_cols), len(numeric_cols + categorical_cols))]
+    k_proto = KPrototypes(n_clusters=6, init='Cao', verbose=2)
+    clusters = k_proto.fit_predict(X, categorical=cat_cols_idx)
+    print(f"center points: {k_proto.cluster_centroids_}")
+
+    df['cluster'] = clusters
+    print(pd.Series(clusters).value_counts())
+
+    return df
+
+def recommend(song_title, df):
+
+    cluster_id = df[df["name"] == song_title]["cluster"].values[0]
+    recs = df[df["cluster"] == cluster_id]
+    print(recs)
+    # return recs[recs['song']]
+
+def k_proto(song_title):
+    main_df = get_samples("data/tracks_features.csv")
+    recommend(song_title, main_df)
 
 
-get_samples("data/tracks_features.csv")
+k_proto("Freedom")
