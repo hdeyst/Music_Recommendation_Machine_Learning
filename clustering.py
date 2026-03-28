@@ -138,7 +138,7 @@ def get_samples(filename):
     cat_cols_idx = [i for i in range(len(numeric_cols), len(numeric_cols + categorical_cols))]
     k_proto = KPrototypes(n_clusters=6, init='Cao', verbose=2)
     clusters = k_proto.fit_predict(X, categorical=cat_cols_idx)
-    print(f"center points: {k_proto.cluster_centroids_}")
+    # print(f"center points: {k_proto.cluster_centroids_}")
 
     df['cluster'] = clusters
     print(pd.Series(clusters).value_counts())
