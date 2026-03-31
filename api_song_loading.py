@@ -52,8 +52,8 @@ def get_top_spotify_tracks() :
     return top_tracks
 
 
-# takes in song info from spotipy call and gets data from reccobeats ab the song
-def get_track_info(top_tracks):
+# takes in multiple songs info from spotipy call and gets data from reccobeats ab the song
+def get_tracks_info(top_tracks):
     # extract spotify ids from top_tracks
     track_ids = [track['id'] for track in top_tracks['items']]
 
@@ -75,9 +75,22 @@ def get_track_info(top_tracks):
         print(f"{i+1}. {artist_name} - {track_name} | energy: {energy}, danceability: {danceability}, tempo: {tempo}")
     return features
 
+
+def get_track_info(track):
+    track_id = track['id']
+    # Single batch call to ReccoBeats
+    response = requests.get(
+        "https://api.reccobeats.com/v1/audio-features",
+        params={"ids": ",".join(track_id)},
+        headers={"Accept": "application/json"}
+    )
+    features = response.json().get("content", [])
+    return features
+
+
 def top_20_with_info():
     top_tracks = get_top_spotify_tracks()
-    track_features = get_track_info(top_tracks)
+    track_features = get_tracks_info(top_tracks)
     for tf in track_features:
         print(tf)
 
@@ -86,7 +99,7 @@ def top_20_with_info():
 
 def cosine_sim():
     top_tracks = get_top_spotify_tracks()
-    features = get_track_info(top_tracks)
+    features = get_tracks_info(top_tracks)
     df = pd.read_csv('data/tracks_features.csv')
     print(df.head())
 
