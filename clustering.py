@@ -71,17 +71,40 @@ def recommend():
     scaled_feats = scaler.transform(track_features_df.values)
     distances, idxs = knn.kneighbors(scaled_feats)
 
+    # TODO: make sure that there are no duplicate songs in the output
     # if the number of songs in spotify's top tracks != number of songs you are recommended for
     if len(top_tracks['items']) > len(idxs):
         top_tracks['items'] = top_tracks['items'][:len(idxs)]
 
     for i, track in enumerate(top_tracks['items']):
         print(f"\nRecommendations for {track['name']} by {track['artists'][0]['name']}:")
-        print(df.iloc[idxs[i]][['name', 'artists']])
+        format_recs(df.iloc[idxs[i]])
 
 
-def get_input(track_title, artist):
-    pass
+# takes in df of 5 song recommendations and prints them nicely
+def format_recs(rec_list):
+    for i, rec in rec_list.iterrows():
+        print(one_rec(rec))
+
+
+def one_rec(song_info):
+    artists_str = ""
+    title_str = song_info['name']
+    artist_lst = song_info['artists']
+    artist_lst = artist_lst.replace("[", "").replace("]", "").replace("'", "")
+
+    a_lst = list(artist_lst.split(","))
+    # print(a_lst
+
+    for i, artist in enumerate(a_lst):
+        artists_str += artist
+
+        if i < len(a_lst) - 1:
+            artists_str += ", "
+
+    return f"\t{title_str} by {artists_str}"
+
+
 
 def spotipy_connect():
     # get credentials from the json file
