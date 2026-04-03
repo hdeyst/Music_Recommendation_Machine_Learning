@@ -118,5 +118,4 @@ def cosine_sim():
         print(f"\nRecommendations for {track['name']}:")
         print(df.iloc[top_indices][['name', 'artists']])
 
-if __name__ == "__main__":
     cosine_sim()
