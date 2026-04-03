@@ -33,7 +33,7 @@ def train_kmeans(X, scaler):
 def recommend():
     scaler = StandardScaler()
 
-    X, df = load_data("data/tracks.csv")
+    X, df = load_data("data/tracks_features.csv")
     scaler, km, knn, clusters, scaled_X = train_kmeans(X, scaler)
 
     df['cluster'] = clusters
