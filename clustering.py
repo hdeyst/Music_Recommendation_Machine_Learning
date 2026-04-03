@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from api_song_loading import FEATURES, get_tracks_info, get_top_spotify_tracks
+from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks
 
 # TODO: make this not hard coded
 K_VAL = 10
