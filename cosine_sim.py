@@ -117,5 +117,5 @@ def cosine_sim():
         top_indices = similarities[i].argsort()[::-1][:10]
         print(f"\nRecommendations for {track['name']}:")
         print(df.iloc[top_indices][['name', 'artists']])
-
-cosine_sim()
+if __name__ == "__main__":
+    cosine_sim()
