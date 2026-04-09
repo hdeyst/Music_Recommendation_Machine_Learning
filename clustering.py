@@ -2,14 +2,14 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from api_song_loading import FEATURES, get_tracks_info, get_top_spotify_tracks
+from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import json
 
 # TODO: make this not hard coded
 K_VAL = 10
-NUM_NEIGHBORS = 5
+NUM_NEIGHBORS = 10
 
 def load_data(filename):
     df = pd.read_csv(filename)
@@ -94,7 +94,6 @@ def one_rec(song_info):
     artist_lst = artist_lst.replace("[", "").replace("]", "").replace("'", "")
 
     a_lst = list(artist_lst.split(","))
-    # print(a_lst
 
     for i, artist in enumerate(a_lst):
         artists_str += artist
@@ -121,8 +120,53 @@ def spotipy_connect():
     return sp
 
 
+def get_song_attributes(song_name, artist_name):
+
+    retrieved_song = ""
+    # check if the song is already in the database
+    try:
+        X, df = load_data("data/tracks_features.csv")
+        song_info = df[df['name'].str.contains(song_name, case=False)]
+        song_info = song_info[song_info['artists'].str.contains(artist_name, case=False)]
+
+        for i in range(len(song_info)):
+            print(song_info.iloc[i])
+
+        print(song_info.iloc[0])
+        retrieved_song = song_info.iloc[0]
+
+        print(f"{retrieved_song['name']} by {retrieved_song['artists'].strip("['']")}")
+
+    except Exception as e:
+        print(f"Song {song_name} not found in dataframe. Calling spotify api...")
+
+        sp = spotipy_connect()
+        results = sp.search(q=f"track:{song_name} artist:{artist_name}", type="track", limit=1)
+        if results['tracks']['items']:
+            retrieved_song = results['tracks']['items'][0]
+            print(results["tracks"]["items"][0])
+
+            print(f"{retrieved_song['name']} by {retrieved_song['artists'][0]['name']}")
+
+    return retrieved_song
+
+
+
+
 def main():
     recommend()
 
 if __name__ == "__main__":
-    main()
+    # main()
+
+    song = "Nothing I need"
+    artist = "lord Huron"
+    get_song_attributes(song, artist)
+
+    song = "The boxer"  # temp simon and garfunk
+    artist = "Simon & garfunkel"
+    get_song_attributes(song, artist)
+
+    # while not get_song_attributes(song_name, artist_name):
+    #     song_name = input("Enter song name: ")
+    #     artist_name = input("Enter artist name: ")
