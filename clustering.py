@@ -96,14 +96,17 @@ def input_to_rec(song_info):
     distances, idxs = knn.kneighbors(scaled_feats)
 
     # print(f"\nRecommendations for {song_info['name']} by {song_info['artists'][0]['name']}:")
-    format_recs(df.iloc[idxs[0]])
+    return format_recs(df.iloc[idxs[0]])
 
 
 
-# takes in df of 5 song recommendations and prints them nicely
+# takes in df of song recommendations and formats them nicely
 def format_recs(rec_list):
+    song_lst_formatted = []
     for i, rec in rec_list.iterrows():
-        print(one_rec_to_str(rec))
+        song_lst_formatted.append(one_rec_to_str(rec))
+
+    return song_lst_formatted
 
 
 def one_rec_to_str(song_info):
@@ -140,7 +143,6 @@ def spotipy_connect():
 
 
 def get_one_song_feats(song_name, artist_name):
-
     retrieved_song = ""
     # check if the song is already in the database
     try:
@@ -177,25 +179,27 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    # ids_for_recco = []
-    #
-    # song = "Nothing I need"
-    # artist = "lord Huron"
+
+    # song = "Untouched"
+    # artist = "The Veronicas"
     # sp_id = get_one_song_feats(song, artist)
-    #
-    # ids_for_recco.append(sp_id['id'])
-    # song_with_feats = get_audio_features(ids_for_recco)
+    # song_with_feats = get_audio_features([sp_id['id']])
     # print(song_with_feats)
 
-    song = "the boxer"
-    artist = "simon & garfunkel"
-    sp_id = get_one_song_feats(song, artist)
-    song_with_feats = get_audio_features([sp_id['id']])
-    print(song_with_feats)
+    done = False
 
-    input_to_rec(song_with_feats)
+    while not done:
+        song = input("Enter song name: ")
+        artist = input("Enter artist name: ")
+        sp_id = get_one_song_feats(song, artist)
+        song_with_feats = get_audio_features([sp_id['id']])
+        print(song_with_feats)
 
+        all_recs = input_to_rec(song_with_feats)
+        # return the first one
+        print(all_recs[0])
+        print(f"\nRecommendation for {song} by {artist}: {all_recs[0]}")
 
-    # while not get_song_attributes(song_name, artist_name):
-    #     song_name = input("Enter song name: ")
-    #     artist_name = input("Enter artist name: ")
+        cont = input("Continue? (y/n): ")
+        if cont != "y":
+            done = True
