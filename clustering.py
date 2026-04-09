@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks
+from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks, get_audio_features
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import json
@@ -33,7 +33,7 @@ def train_kmeans(X, scaler):
 
     return scaler, km, knn, clusters, scaled_X
 
-def recommend():
+def recommend_top_20():
     scaler = StandardScaler()
 
     X, df = load_data("data/tracks_features.csv")
@@ -84,10 +84,10 @@ def recommend():
 # takes in df of 5 song recommendations and prints them nicely
 def format_recs(rec_list):
     for i, rec in rec_list.iterrows():
-        print(one_rec(rec))
+        print(one_rec_to_str(rec))
 
 
-def one_rec(song_info):
+def one_rec_to_str(song_info):
     artists_str = ""
     title_str = song_info['name']
     artist_lst = song_info['artists']
@@ -120,7 +120,7 @@ def spotipy_connect():
     return sp
 
 
-def get_song_attributes(song_name, artist_name):
+def get_spotify_id(song_name, artist_name):
 
     retrieved_song = ""
     # check if the song is already in the database
@@ -148,24 +148,32 @@ def get_song_attributes(song_name, artist_name):
 
             print(f"{retrieved_song['name']} by {retrieved_song['artists'][0]['name']}")
 
-    return retrieved_song
+    return retrieved_song['id']
 
 
 
 
 def main():
-    recommend()
+    recommend_top_20()
 
 if __name__ == "__main__":
     # main()
+    ids_for_recco = []
 
     song = "Nothing I need"
     artist = "lord Huron"
-    get_song_attributes(song, artist)
+    sp_id = get_spotify_id(song, artist)
 
-    song = "The boxer"  # temp simon and garfunk
-    artist = "Simon & garfunkel"
-    get_song_attributes(song, artist)
+    ids_for_recco.append(sp_id)
+    song_with_feats = get_audio_features(ids_for_recco)
+    print(song_with_feats)
+
+    song = "the boxer"
+    artist = "simon & garfunkel"
+    sp_id = get_spotify_id(song, artist)
+    song_with_feats = get_audio_features([sp_id])
+    print(song_with_feats)
+
 
     # while not get_song_attributes(song_name, artist_name):
     #     song_name = input("Enter song name: ")
