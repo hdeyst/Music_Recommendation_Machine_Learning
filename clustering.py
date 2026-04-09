@@ -80,6 +80,25 @@ def recommend_top_20():
         print(f"\nRecommendations for {track['name']} by {track['artists'][0]['name']}:")
         format_recs(df.iloc[idxs[i]])
 
+def input_to_rec(song_info):
+    scaler = StandardScaler()
+
+    X, df = load_data("data/tracks_features.csv")
+    scaler, km, knn, clusters, scaled_X = train_kmeans(X, scaler)
+
+    df['cluster'] = clusters.labels_
+
+    # scale specified song features
+    track_features_df = pd.DataFrame(song_info)[FEATURES]
+
+    # pass our song into model
+    scaled_feats = scaler.transform(track_features_df.values)
+    distances, idxs = knn.kneighbors(scaled_feats)
+
+    # print(f"\nRecommendations for {song_info['name']} by {song_info['artists'][0]['name']}:")
+    format_recs(df.iloc[idxs[0]])
+
+
 
 # takes in df of 5 song recommendations and prints them nicely
 def format_recs(rec_list):
@@ -120,7 +139,7 @@ def spotipy_connect():
     return sp
 
 
-def get_spotify_id(song_name, artist_name):
+def get_one_song_feats(song_name, artist_name):
 
     retrieved_song = ""
     # check if the song is already in the database
@@ -148,7 +167,7 @@ def get_spotify_id(song_name, artist_name):
 
             print(f"{retrieved_song['name']} by {retrieved_song['artists'][0]['name']}")
 
-    return retrieved_song['id']
+    return retrieved_song
 
 
 
@@ -158,21 +177,23 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    ids_for_recco = []
-
-    song = "Nothing I need"
-    artist = "lord Huron"
-    sp_id = get_spotify_id(song, artist)
-
-    ids_for_recco.append(sp_id)
-    song_with_feats = get_audio_features(ids_for_recco)
-    print(song_with_feats)
+    # ids_for_recco = []
+    #
+    # song = "Nothing I need"
+    # artist = "lord Huron"
+    # sp_id = get_one_song_feats(song, artist)
+    #
+    # ids_for_recco.append(sp_id['id'])
+    # song_with_feats = get_audio_features(ids_for_recco)
+    # print(song_with_feats)
 
     song = "the boxer"
     artist = "simon & garfunkel"
-    sp_id = get_spotify_id(song, artist)
-    song_with_feats = get_audio_features([sp_id])
+    sp_id = get_one_song_feats(song, artist)
+    song_with_feats = get_audio_features([sp_id['id']])
     print(song_with_feats)
+
+    input_to_rec(song_with_feats)
 
 
     # while not get_song_attributes(song_name, artist_name):
