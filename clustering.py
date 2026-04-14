@@ -2,14 +2,14 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from api_song_loading import FEATURES, get_tracks_info, get_top_spotify_tracks
+from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks, get_audio_features
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import json
 
 # TODO: make this not hard coded
 K_VAL = 10
-NUM_NEIGHBORS = 5
+NUM_NEIGHBORS = 10
 
 def load_data(filename):
     df = pd.read_csv(filename)
@@ -33,7 +33,7 @@ def train_kmeans(X, scaler):
 
     return scaler, km, knn, clusters, scaled_X
 
-def recommend():
+def recommend_top_20():
     scaler = StandardScaler()
 
     X, df = load_data("data/tracks_features.csv")
@@ -80,21 +80,42 @@ def recommend():
         print(f"\nRecommendations for {track['name']} by {track['artists'][0]['name']}:")
         format_recs(df.iloc[idxs[i]])
 
+def input_to_rec(song_info):
+    scaler = StandardScaler()
 
-# takes in df of 5 song recommendations and prints them nicely
+    X, df = load_data("data/tracks_features.csv")
+    scaler, km, knn, clusters, scaled_X = train_kmeans(X, scaler)
+
+    df['cluster'] = clusters.labels_
+
+    # scale specified song features
+    track_features_df = pd.DataFrame(song_info)[FEATURES]
+
+    # pass our song into model
+    scaled_feats = scaler.transform(track_features_df.values)
+    distances, idxs = knn.kneighbors(scaled_feats)
+
+    # print(f"\nRecommendations for {song_info['name']} by {song_info['artists'][0]['name']}:")
+    return format_recs(df.iloc[idxs[0]])
+
+
+
+# takes in df of song recommendations and formats them nicely
 def format_recs(rec_list):
+    song_lst_formatted = []
     for i, rec in rec_list.iterrows():
-        print(one_rec(rec))
+        song_lst_formatted.append(one_rec_to_str(rec))
+
+    return song_lst_formatted
 
 
-def one_rec(song_info):
+def one_rec_to_str(song_info):
     artists_str = ""
     title_str = song_info['name']
     artist_lst = song_info['artists']
     artist_lst = artist_lst.replace("[", "").replace("]", "").replace("'", "")
 
     a_lst = list(artist_lst.split(","))
-    # print(a_lst
 
     for i, artist in enumerate(a_lst):
         artists_str += artist
@@ -121,8 +142,64 @@ def spotipy_connect():
     return sp
 
 
+def get_one_song_feats(song_name, artist_name):
+    retrieved_song = ""
+    # check if the song is already in the database
+    try:
+        X, df = load_data("data/tracks_features.csv")
+        song_info = df[df['name'].str.contains(song_name, case=False)]
+        song_info = song_info[song_info['artists'].str.contains(artist_name, case=False)]
+
+        for i in range(len(song_info)):
+            print(song_info.iloc[i])
+
+        print(song_info.iloc[0])
+        retrieved_song = song_info.iloc[0]
+
+        print(f"{retrieved_song['name']} by {retrieved_song['artists'].strip("['']")}")
+
+    except Exception as e:
+        print(f"Song {song_name} not found in dataframe. Calling spotify api...")
+
+        sp = spotipy_connect()
+        results = sp.search(q=f"track:{song_name} artist:{artist_name}", type="track", limit=1)
+        if results['tracks']['items']:
+            retrieved_song = results['tracks']['items'][0]
+            print(results["tracks"]["items"][0])
+
+            print(f"{retrieved_song['name']} by {retrieved_song['artists'][0]['name']}")
+
+    return retrieved_song
+
+
+
+
 def main():
-    recommend()
+    recommend_top_20()
 
 if __name__ == "__main__":
-    main()
+    # main()
+
+    # song = "Untouched"
+    # artist = "The Veronicas"
+    # sp_id = get_one_song_feats(song, artist)
+    # song_with_feats = get_audio_features([sp_id['id']])
+    # print(song_with_feats)
+
+    done = False
+
+    while not done:
+        song = input("Enter song name: ")
+        artist = input("Enter artist name: ")
+        sp_id = get_one_song_feats(song, artist)
+        song_with_feats = get_audio_features([sp_id['id']])
+        print(song_with_feats)
+
+        all_recs = input_to_rec(song_with_feats)
+        # return the first one
+        print(all_recs[0])
+        print(f"\nRecommendation for {song} by {artist}: {all_recs[0]}")
+
+        cont = input("Continue? (y/n): ")
+        if cont != "y":
+            done = True
