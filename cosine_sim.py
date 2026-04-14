@@ -3,22 +3,16 @@ from spotipy.oauth2 import SpotifyOAuth
 import json
 import requests
 import http.client
-import time
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 
 FEATURES = [
-    'energy',
     'danceability',
-    'tempo',
     'acousticness',
     'instrumentalness',
-    'liveness',
-    'loudness',
-    'speechiness',
-    'valence'
+    'loudness'
 ]
 
 conn = http.client.HTTPSConnection("api.reccobeats.com")
@@ -117,5 +111,78 @@ def cosine_sim():
         top_indices = similarities[i].argsort()[::-1][:10]
         print(f"\nRecommendations for {track['name']}:")
         print(df.iloc[top_indices][['name', 'artists']])
+
+
+def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler, n=10):
+    cred_file = "credentials.json"
+    with open(cred_file, 'r') as f:
+        data = json.load(f)
+
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+        client_id=data["CLIENT_ID"],
+        client_secret=data["CLIENT_SECRET"],
+        redirect_uri=data["REDIRECT_URI"],
+        scope=data["SCOPE"]
+    ))
+
+    match = df[
+        (df['name'].str.lower() == song_name.lower()) &
+        (df['artists'].str.lower().str.contains(artist_name.lower()))
+    ]
+    
+    if not match.empty:
+        print(f"Found '{song_name}' in local dataset")
+        song_features = match[FEATURES].iloc[0].values.reshape(1, -1)
+        song_scaled = scaler.transform(song_features)
+    
+    else:
+        print(f"Not found locally, searching ReccoBeats...")
+        results = sp.search(q=f"track:{song_name} artist:{artist_name}", type='track', limit=1)
+        if not results['tracks']['items']:
+            print(f"Song '{song_name}' not found anywhere.")
+            return None
+        
+        track = results['tracks']['items'][0]
+        track_id = track['id']
+        print(f"Found '{track['name']}' by {track['artists'][0]['name']} on Spotify")
+        
+        response = requests.get(
+            "https://api.reccobeats.com/v1/audio-features",
+            params={"ids": track_id},
+            headers={"Accept": "application/json"}
+        )
+        content = response.json().get("content", [])
+        if not content:
+            print("ReccoBeats returned no features for this song.")
+            return None
+        
+        feat = content[0]
+        song_features = pd.DataFrame([feat])[FEATURES].fillna(0).values
+        song_scaled = scaler.transform(song_features)
+    
+    similarities = cosine_similarity(song_scaled, df_scaled)[0]
+    top_indices = similarities.argsort()[::-1][:n+20]  
+
+
+    print(f"\nRecommendations for '{song_name}':")
+    count = 0
+    for idx in top_indices:
+        if idx >= len(df):  
+            continue
+        candidate = df.iloc[idx]['name']
+        if candidate.lower() == song_name.lower(): 
+            continue
+        artist = df.iloc[idx]['artists']
+        print(f"{count+1}. {artist} - {candidate}")
+        count += 1
+        if count == n:
+            break
+
+
 if __name__ == "__main__":
-    cosine_sim()
+    df = pd.read_csv('data/tracks_features.csv')
+    scaler = StandardScaler()
+    df_scaled = scaler.fit_transform(df[FEATURES])
+    #get_recommendations("Crop Circles", "Odie Leigh", df, df_scaled, scaler)
+    #cosine_sim()
+    get_recommendations("All My Friends", "LCD Soundsystem", df, df_scaled, scaler)
