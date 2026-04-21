@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
-from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks, get_audio_features
+from cosine_sim import get_audio_features
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import json
@@ -10,6 +10,15 @@ import json
 # TODO: make this not hard coded
 K_VAL = 10
 NUM_NEIGHBORS = 10
+
+
+FEATURES = [
+    'danceability',
+    'acousticness',
+    'instrumentalness',
+    'loudness'
+]
+
 
 def load_data(filename):
     df = pd.read_csv(filename)
@@ -172,34 +181,35 @@ def get_one_song_feats(song_name, artist_name):
     return retrieved_song
 
 
+def recommend(song, artist):
+    sp_id = get_one_song_feats(song, artist)
+    song_with_feats = get_audio_features([sp_id['id']])
+    print(song_with_feats)
 
+    all_recs = input_to_rec(song_with_feats)
+    # return the first one
+    print(all_recs[0])
+    print(f"\nRecommendation for {song} by {artist}: {all_recs[0]}")
 
-def main():
-    recommend_top_20()
+# def main():
+#     recommend_top_20()
 
-if __name__ == "__main__":
-    # main()
-
-    # song = "Untouched"
-    # artist = "The Veronicas"
-    # sp_id = get_one_song_feats(song, artist)
-    # song_with_feats = get_audio_features([sp_id['id']])
-    # print(song_with_feats)
-
-    done = False
-
-    while not done:
-        song = input("Enter song name: ")
-        artist = input("Enter artist name: ")
-        sp_id = get_one_song_feats(song, artist)
-        song_with_feats = get_audio_features([sp_id['id']])
-        print(song_with_feats)
-
-        all_recs = input_to_rec(song_with_feats)
-        # return the first one
-        print(all_recs[0])
-        print(f"\nRecommendation for {song} by {artist}: {all_recs[0]}")
-
-        cont = input("Continue? (y/n): ")
-        if cont != "y":
-            done = True
+# if __name__ == "__main__":
+#     # main()
+#
+#     # song = "Untouched"
+#     # artist = "The Veronicas"
+#     # sp_id = get_one_song_feats(song, artist)
+#     # song_with_feats = get_audio_features([sp_id['id']])
+#     # print(song_with_feats)
+#
+#     done = False
+#
+#     while not done:
+#         song = input("Enter song name: ")
+#         artist = input("Enter artist name: ")
+#         recommend(song, artist)
+#
+#         cont = input("Continue? (y/n): ")
+#         if cont != "y":
+#             done = True
