@@ -3,11 +3,11 @@ from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 from fuzzywuzzy import fuzz
 from scipy import sparse
-
+from spotipy.oauth2 import SpotifyClientCredentials
 
 N = 1
-SONG = 'These Days'
-ARTIST = 'Nico'
+SONG = 'Washed'
+ARTIST = 'The Jack Wharff Band'
 
 ### ------------- NICKS CODE ------------------ ###
 # read in files
@@ -142,6 +142,17 @@ headers = {
   'Accept': 'application/json'
 }
 
+def create_spotify_client():
+    cred_file = "credentials.json"
+    with open(cred_file, 'r') as f:
+        data = json.load(f)
+
+    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+        client_id=data["CLIENT_ID"],
+        client_secret=data["CLIENT_SECRET"]
+    ))
+    return sp
+
 def get_audio_features(spotify_ids: list[str]) -> list[dict]:
     ids_param = ",".join(spotify_ids)
     url = f"https://api.reccobeats.com/v1/audio-features?ids={ids_param}"
@@ -202,7 +213,7 @@ def get_track_info(track):
     features = response.json().get("content", [])
     return features
 
-
+"""
 def top_20_with_info():
     top_tracks = get_top_spotify_tracks()
     track_features = get_tracks_info(top_tracks)
@@ -211,7 +222,8 @@ def top_20_with_info():
 
     df = pd.DataFrame(track_features)
     print(df.info)
-
+"""
+"""
 def cosine_sim():
     top_tracks = get_top_spotify_tracks()
     features = get_tracks_info(top_tracks)
@@ -232,41 +244,40 @@ def cosine_sim():
         top_indices = similarities[i].argsort()[::-1][:10]
         print(f"\nRecommendations for {track['name']}:")
         print(df.iloc[top_indices][['name', 'artists']])
-
+"""
 
 def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler, n=N):
-    cred_file = "credentials.json"
-    with open(cred_file, 'r') as f:
-        data = json.load(f)
-
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-        client_id=data["CLIENT_ID"],
-        client_secret=data["CLIENT_SECRET"],
-        redirect_uri=data["REDIRECT_URI"],
-        scope=data["SCOPE"]
-    ))
+    sp = create_spotify_client()
+    print("AUTH:", type(sp.auth_manager))
 
     match = df[
         (df['name'].str.lower() == song_name.lower()) &
         (df['artists'].str.lower().str.contains(artist_name.lower()))
-    ]
-    
+        ]
+
     if not match.empty:
         print(f"Found '{song_name}' in local dataset")
-        song_features = match[FEATURES].iloc[0].values.reshape(1, -1)
+        song_features = match[FEATURES].iloc[[0]]
         song_scaled = scaler.transform(song_features)
-    
+
     else:
-        print(f"Not found locally, searching ReccoBeats...")
-        results = sp.search(q=f"track:{song_name} artist:{artist_name}", type='track', limit=1)
+        print(f"Not found locally, searching Spotify...")
+        sp = create_spotify_client()
+
+        try:
+            results = sp.search(q=f"track:{song_name} artist:{artist_name}", type='track', limit=1)
+        except Exception as e:
+            print(f"Spotify search failed: {e}")
+            return None
+
         if not results['tracks']['items']:
             print(f"Song '{song_name}' not found anywhere.")
             return None
-        
+
         track = results['tracks']['items'][0]
         track_id = track['id']
         print(f"Found '{track['name']}' by {track['artists'][0]['name']} on Spotify")
-        
+
         response = requests.get(
             "https://api.reccobeats.com/v1/audio-features",
             params={"ids": track_id},
@@ -276,25 +287,24 @@ def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler,
         if not content:
             print("ReccoBeats returned no features for this song.")
             return None
-        
-        feat = content[0]
-        song_features = pd.DataFrame([feat])[FEATURES].fillna(0).values
-        song_scaled = scaler.transform(song_features)
-    
-    similarities = cosine_similarity(song_scaled, df_scaled)[0]
-    top_indices = similarities.argsort()[::-1][:n+20]  
 
+        feat = content[0]
+        song_features = pd.DataFrame([feat])[FEATURES].fillna(0)
+        song_scaled = scaler.transform(song_features)
+
+    similarities = cosine_similarity(song_scaled, df_scaled)[0]
+    top_indices = similarities.argsort()[::-1][:n + 20]
 
     print(f"\nRecommendations for '{song_name}':")
     count = 0
     for idx in top_indices:
-        if idx >= len(df):  
+        if idx >= len(df):
             continue
         candidate = df.iloc[idx]['name']
-        if candidate.lower() == song_name.lower(): 
-            continue
         artist = df.iloc[idx]['artists']
-        print(f"{count+1}. {artist} - {candidate}")
+        if candidate.lower() == song_name.lower():
+            continue
+        print(f"{count + 1}. {artist} - {candidate}")
         count += 1
         if count == n:
             break
@@ -307,7 +317,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 # from cosine_sim import FEATURES, get_tracks_info, get_top_spotify_tracks, get_audio_features
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
+#from spotipy.oauth2 import SpotifyOAuth
 import json
 
 # TODO: make this not hard coded
@@ -320,7 +330,7 @@ def load_data(filename):
     df = df.dropna()
 
     # extract data w/o labels
-    X = df[FEATURES].values
+    X = df[FEATURES]
     return X, df
 
 def train_kmeans(X, scaler):
@@ -391,18 +401,27 @@ def input_to_rec(song_info):
 
     df['cluster'] = clusters.labels_
 
-    # scale specified song features
-    print(df.columns.tolist()) # for debug
-    track_features_df = pd.DataFrame(song_info)[FEATURES]
+    if isinstance(song_info, pd.Series):
+        track_features_df = song_info[FEATURES].to_frame().T
 
-    # pass our song into model
-    scaled_feats = scaler.transform(track_features_df.values)
+    elif isinstance(song_info, dict):
+        track_features_df = pd.DataFrame([song_info])[FEATURES]
+
+    elif isinstance(song_info, pd.DataFrame):
+        track_features_df = song_info[FEATURES].iloc[[0]]
+
+    elif isinstance(song_info, list):
+        if len(song_info) != len(FEATURES):
+            raise ValueError(f"Expected {len(FEATURES)} feature values, got {len(song_info)}")
+        track_features_df = pd.DataFrame([song_info], columns=FEATURES)
+
+    else:
+        raise TypeError(f"song_info has unexpected type: {type(song_info)}")
+
+    scaled_feats = scaler.transform(track_features_df)
     distances, idxs = knn.kneighbors(scaled_feats)
 
-    # print(f"\nRecommendations for {song_info['name']} by {song_info['artists'][0]['name']}:")
-    return format_recs(df.iloc[idxs[0]])
-
-
+    return df.iloc[idxs[0]]
 
 # takes in df of song recommendations and formats them nicely
 def format_recs(rec_list):
@@ -446,35 +465,17 @@ def spotipy_connect():
     return sp
 
 
-def get_one_song_feats(song_name, artist_name):
-    retrieved_song = ""
-    # check if the song is already in the database
+def get_one_song_feats(song_name, artist_name, sp):
     try:
-        X, df = load_data("data/tracks_features.csv")
-        song_info = df[df['name'].str.contains(song_name, case=False)]
-        song_info = song_info[song_info['artists'].str.contains(artist_name, case=False)]
-
-        for i in range(len(song_info)):
-            # print(song_info.iloc[i])
-            pass
-
-        # print(song_info.iloc[0])
-        retrieved_song = song_info.iloc[0]
-
-        #print(f"{retrieved_song['name']} by {retrieved_song['artists'].strip("['']")}")
-
-    except Exception as e:
-        # print(f"Song {song_name} not found in dataframe. Calling spotify api...")
-
-        sp = spotipy_connect()
         results = sp.search(q=f"track:{song_name} artist:{artist_name}", type="track", limit=1)
-        if results['tracks']['items']:
-            retrieved_song = results['tracks']['items'][0]
-            # print(results["tracks"]["items"][0])
+    except Exception as e:
+        print(f"Spotify search failed in get_one_song_feats: {e}")
+        return None
 
-            # print(f"{retrieved_song['name']} by {retrieved_song['artists'][0]['name']}")
+    if not results['tracks']['items']:
+        return None
 
-    return retrieved_song
+    return results['tracks']['items'][0]
 
 
 
@@ -517,21 +518,31 @@ if __name__ == "__main__":
     df = pd.read_csv('data/tracks_features.csv')
     scaler = StandardScaler()
     df_scaled = scaler.fit_transform(df[FEATURES])
-    #get_recommendations("Crop Circles", "Odie Leigh", df, df_scaled, scaler)
-    #cosine_sim()
-    print(f"Recommendations for {SONG} by {ARTIST}:")
-    get_recommendations(SONG, ARTIST, df, df_scaled, scaler) # varuns song
-    print("\n".join(new_recommendations)) # nicks song
-    done = False  # hannahs song
-    while not done:
 
-        sp_id = get_one_song_feats(SONG, ARTIST)
-        song_with_feats = get_audio_features([sp_id['id']])
+    print(f"Recommendations for {SONG} by {ARTIST}:")
+    get_recommendations(SONG, ARTIST, df, df_scaled, scaler)
+    print("\n".join(new_recommendations))
+
+    done = False
+    while not done:
+        sp = create_spotify_client()
+
+        sp_id = get_one_song_feats(SONG, ARTIST, sp)
+        if sp_id is None:
+            print(f"Could not fetch song info for {SONG} by {ARTIST}.")
+            break
+
+        feats_list = get_audio_features([sp_id['id']])
+        if not feats_list:
+            print(f"No ReccoBeats features found for {SONG} by {ARTIST}.")
+            break
+
+        song_with_feats = feats_list[0]
         all_recs = input_to_rec(song_with_feats)
-        # return the first one
-        print(f"\nRecommendation for {SONG} by {ARTIST}: {all_recs[0]}")
+
+        formatted = format_recs(all_recs)
+        print(f"\nRecommendation for {SONG} by {ARTIST}: {formatted[0]}")
 
         cont = input("Continue? (y/n): ")
         if cont != "y":
             done = True
-   
