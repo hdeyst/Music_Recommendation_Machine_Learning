@@ -6,8 +6,8 @@ from scipy import sparse
 from spotipy.oauth2 import SpotifyClientCredentials
 
 N = 1
-SONG = 'Washed'
-ARTIST = 'The Jack Wharff Band'
+SONG = 'Television Rules the Nation / Creshendolls'
+ARTIST = 'Daft Punk'
 
 ### ------------- NICKS CODE ------------------ ###
 # read in files
