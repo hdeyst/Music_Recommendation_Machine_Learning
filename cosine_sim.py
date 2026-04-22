@@ -70,8 +70,8 @@ def get_tracks_info(top_tracks):
     return features
 
 
-def get_track_info(track):
-    track_id = track['id']
+def get_track_info(track_id):
+    # track_id = track['id']
     # Single batch call to ReccoBeats
     response = requests.get(
         "https://api.reccobeats.com/v1/audio-features",
@@ -178,11 +178,19 @@ def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler,
         if count == n:
             break
 
-
-if __name__ == "__main__":
+def cos_sim(song, artist):
     df = pd.read_csv('data/tracks_features.csv')
     scaler = StandardScaler()
     df_scaled = scaler.fit_transform(df[FEATURES])
     #get_recommendations("Crop Circles", "Odie Leigh", df, df_scaled, scaler)
     #cosine_sim()
-    get_recommendations("All My Friends", "LCD Soundsystem", df, df_scaled, scaler)
+    get_recommendations(song, artist, df, df_scaled, scaler)
+
+
+# if __name__ == "__main__":
+#     df = pd.read_csv('data/tracks_features.csv')
+#     scaler = StandardScaler()
+#     df_scaled = scaler.fit_transform(df[FEATURES])
+#     #get_recommendations("Crop Circles", "Odie Leigh", df, df_scaled, scaler)
+#     #cosine_sim()
+#     get_recommendations("All My Friends", "LCD Soundsystem", df, df_scaled, scaler)
