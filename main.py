@@ -7,6 +7,9 @@ from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
 from CollaborativeRecommender import collaborative_exp
 from cosine_sim import get_audio_features, cos_sim
 
@@ -49,6 +52,10 @@ def input_to_rec(song_info):
     scaler, km, knn, clusters, scaled_X = train_kmeans(X, scaler)
 
     df['cluster'] = clusters.labels_
+    # X_2d = PCA(n_components=2).fit_transform(X)
+    #
+    # plt.scatter(X_2d[:, 0], X_2d[:, 1], c=clusters.labels_)
+    # plt.show()
 
     # scale specified song features
     track_features_df = pd.DataFrame(song_info)[FEATURES]
