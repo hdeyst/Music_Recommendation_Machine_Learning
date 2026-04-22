@@ -109,35 +109,6 @@ def spotipy_connect():
     return sp
 
 
-def get_one_song_feats(song_name, artist_name):
-    retrieved_song = ""
-    # check if the song is already in the database
-    try:
-        X, df = load_data("data/tracks_features.csv")
-        song_info = df[df['name'].str.contains(song_name, case=False)]
-        song_info = song_info[song_info['artists'].str.contains(artist_name, case=False)]
-
-        for i in range(len(song_info)):
-            print(song_info.iloc[i])
-
-        print(song_info.iloc[0])
-        retrieved_song = song_info.iloc[0]
-
-        print(f"{retrieved_song['name']} by {retrieved_song['artists'].strip("['']")}")
-
-    except Exception as e:
-        print(f"Song {song_name} not found in dataframe. Calling spotify api...")
-
-        sp = spotipy_connect()
-        results = sp.search(q=f"track:{song_name} artist:{artist_name}", type="track", limit=1)
-        if results['tracks']['items']:
-            retrieved_song = results['tracks']['items'][0]
-            print(results["tracks"]["items"][0])
-
-            print(f"{retrieved_song['name']} by {retrieved_song['artists'][0]['name']}")
-
-    return retrieved_song
-
 def call_spotipy(song_name, artist_name):
     # print(f"Searching spotify for {song_name}...")
     retrieved_song = ""
