@@ -30,8 +30,29 @@ def load_data(filename):
     X = df[FEATURES].values
     return X, df
 
+def plot_elbow(X, scaler):
+    scaled_X = scaler.fit_transform(X)
+
+    inertias = []
+    ks = [i for i in range(1, 20)]
+    for k in ks:
+        km = KMeans(n_clusters=k, init="random", n_init=10)
+        km.fit(scaled_X)
+        inertias.append(km.inertia_)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(ks, inertias, marker='o')
+    plt.xlabel("Number of Clusters (K)")
+    plt.ylabel("Inertia")
+    plt.title("Elbow Method for Optimal K")
+    plt.grid(True)
+    plt.show()
+
 def train_kmeans(X, scaler):
-    K_VAL = 10
+    # draw elbow plot
+    # plot_elbow(X, scaler)
+
+    K_VAL = 5
     scaled_X = scaler.fit_transform(X)
 
     # create clusters w/ kmeans
@@ -52,10 +73,11 @@ def input_to_rec(song_info):
     scaler, km, knn, clusters, scaled_X = train_kmeans(X, scaler)
 
     df['cluster'] = clusters.labels_
-    # X_2d = PCA(n_components=2).fit_transform(X)
-    #
-    # plt.scatter(X_2d[:, 0], X_2d[:, 1], c=clusters.labels_)
-    # plt.show()
+
+    # Uncomment to see PCA graph
+    X_2d = PCA(n_components=2).fit_transform(X)
+    plt.scatter(X_2d[:, 0], X_2d[:, 1], c=clusters.labels_)
+    plt.show()
 
     # scale specified song features
     track_features_df = pd.DataFrame(song_info)[FEATURES]
