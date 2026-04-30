@@ -91,29 +91,29 @@ def top_20_with_info():
     df = pd.DataFrame(track_features)
     print(df.info)
 
-def cosine_sim():
-    top_tracks = get_top_spotify_tracks()
-    features = get_tracks_info(top_tracks)
-    df = pd.read_csv('data/tracks_features.csv')
-    print(df.head())
+# def cosine_sim():
+#     top_tracks = get_top_spotify_tracks()
+#     features = get_tracks_info(top_tracks)
+#     df = pd.read_csv('data/tracks_features.csv')
+#     print(df.head())
+#
+#
+#     scaler = StandardScaler()
+#     df_scaled = scaler.fit_transform(df[FEATURES])
+#
+#     top_df = pd.DataFrame(features)[FEATURES].fillna(0)
+#     top_scaled = scaler.transform(top_df)
+#
+#     similarities = cosine_similarity(top_scaled, df_scaled)
+#
+#
+#     for i, track in enumerate(top_tracks['items']):
+#         top_indices = similarities[i].argsort()[::-1][:10]
+#         print(f"\nRecommendations for {track['name']}:")
+#         print(df.iloc[top_indices][['name', 'artists']])
 
 
-    scaler = StandardScaler()
-    df_scaled = scaler.fit_transform(df[FEATURES])
-
-    top_df = pd.DataFrame(features)[FEATURES].fillna(0)
-    top_scaled = scaler.transform(top_df)
-
-    similarities = cosine_similarity(top_scaled, df_scaled)
-
-
-    for i, track in enumerate(top_tracks['items']):
-        top_indices = similarities[i].argsort()[::-1][:10]
-        print(f"\nRecommendations for {track['name']}:")
-        print(df.iloc[top_indices][['name', 'artists']])
-
-
-def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler, n=10):
+def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler, n=3):
     cred_file = "credentials.json"
     with open(cred_file, 'r') as f:
         data = json.load(f)
@@ -173,7 +173,7 @@ def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler,
         if candidate.lower() == song_name.lower(): 
             continue
         artist = df.iloc[idx]['artists']
-        print(f"{count+1}. {artist} - {candidate}")
+        print(f"{candidate} by {artist[2:-2]}")
         count += 1
         if count == n:
             break
@@ -182,8 +182,6 @@ def cos_sim(song, artist):
     df = pd.read_csv('data/tracks_features.csv')
     scaler = StandardScaler()
     df_scaled = scaler.fit_transform(df[FEATURES])
-    #get_recommendations("Crop Circles", "Odie Leigh", df, df_scaled, scaler)
-    #cosine_sim()
     get_recommendations(song, artist, df, df_scaled, scaler)
 
 

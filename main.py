@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 from CollaborativeRecommender import collaborative_exp
 from cosine_sim import get_audio_features, cos_sim
 
+import warnings
+warnings.filterwarnings("ignore", message="")
+
 
 FEATURES = [
     'danceability',
@@ -112,7 +115,7 @@ def one_rec_to_str(song_info):
         if i < len(a_lst) - 1:
             artists_str += ", "
 
-    return f"\t{title_str} by {artists_str}"
+    return f"\t{title_str.strip()} by {artists_str.strip()}"
 
 
 
@@ -152,10 +155,10 @@ def clustering_rec(song, artist):
     else:
         return False
     # return the first one
-    print(f"1. {all_recs[0]}\n2. {all_recs[1]}\n3. {all_recs[2]}")
-    rec = all_recs[0]
-    if all_recs[0].lower == f"{song} by {artist}":
-        rec = all_recs[1]
+    print(f"{all_recs[0]}\n{all_recs[1]}\n{all_recs[2]}")
+    # rec = all_recs[0]
+    # if all_recs[0].lower == f"{song} by {artist}":
+    #     rec = all_recs[1]
     # print(f"\nRecommendation for {song} by {artist}: {rec}")
     # return rec
 
@@ -171,7 +174,7 @@ if __name__ == "__main__":
         print(f"\nkmeans rec:")
         done = clustering_rec(s, a)
         print(f"\ncollaborative rec:")
-        collaborative_exp(s, a, n=1)
+        collaborative_exp(s, a, n=3)
         print(f"\ncosine similarity rec:")
         cos_sim(s, a)
 

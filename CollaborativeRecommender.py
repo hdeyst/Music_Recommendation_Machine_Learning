@@ -95,7 +95,7 @@ def collaborative_exp(song, artist, n):
     }
 
     decode_id_title_artist = {
-        i: f"{title} - {artist}"
+        i: f"{title} by {artist}"
         for i, (title, artist) in decode_id_artists.items()
     }
 
@@ -107,9 +107,9 @@ def collaborative_exp(song, artist, n):
     model.decode_id_artists = decode_id_artists
     model.decode_id_title_artist = decode_id_title_artist
 
-    input_string = f"{song} - {artist}"
+    input_string = f"{song} by {artist}"
 
     new_recommendations = model.make_recommendation(new_song=input_string, n_recommendations=n)
 
-    print(f"Recommendations for {song} by {artist}:")
+    # print(f"Recommendations for {song} by {artist}:")
     print("\n".join(new_recommendations))
