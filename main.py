@@ -52,7 +52,7 @@ def plot_elbow(X, scaler):
     plt.show()
 
 def train_kmeans(X, scaler):
-    # draw elbow plot
+    # Uncomment to see elbow plot
     # plot_elbow(X, scaler)
 
     K_VAL = 5
@@ -78,9 +78,9 @@ def input_to_rec(song_info):
     df['cluster'] = clusters.labels_
 
     # Uncomment to see PCA graph
-    X_2d = PCA(n_components=2).fit_transform(X)
-    plt.scatter(X_2d[:, 0], X_2d[:, 1], c=clusters.labels_)
-    plt.show()
+    # X_2d = PCA(n_components=2).fit_transform(X)
+    # plt.scatter(X_2d[:, 0], X_2d[:, 1], c=clusters.labels_)
+    # plt.show()
 
     # scale specified song features
     track_features_df = pd.DataFrame(song_info)[FEATURES]
@@ -135,7 +135,6 @@ def spotipy_connect():
 
 
 def call_spotipy(song_name, artist_name):
-    # print(f"Searching spotify for {song_name}...")
     retrieved_song = ""
     sid = ""
     sp = spotipy_connect()
@@ -154,13 +153,9 @@ def clustering_rec(song, artist):
         all_recs = input_to_rec(song_with_feats)
     else:
         return False
-    # return the first one
-    print(f"{all_recs[0]}\n{all_recs[1]}\n{all_recs[2]}")
-    # rec = all_recs[0]
-    # if all_recs[0].lower == f"{song} by {artist}":
-    #     rec = all_recs[1]
-    # print(f"\nRecommendation for {song} by {artist}: {rec}")
-    # return rec
+    # return the first three
+    print(f"{all_recs[0].strip()}\n{all_recs[1].strip()}\n{all_recs[2].strip()}")
+
 
 
 if __name__ == "__main__":
