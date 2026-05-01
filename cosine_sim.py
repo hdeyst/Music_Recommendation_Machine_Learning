@@ -164,7 +164,7 @@ def get_recommendations(song_name: str, artist_name: str, df, df_scaled, scaler,
     top_indices = similarities.argsort()[::-1][:n+20]  
 
 
-    print(f"\nRecommendations for '{song_name}':")
+    # print(f"\nRecommendations for '{song_name}':")
     count = 0
     for idx in top_indices:
         if idx >= len(df):  
