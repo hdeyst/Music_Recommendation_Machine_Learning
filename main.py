@@ -198,17 +198,14 @@ if __name__ == "__main__":
         s = input("Enter song name: ")
         a = input("Enter artist name: ")
         print()
-        print(f"Finding recommendations for {s.capitalize()} by {a.capitalize()}...")
+        print(f"Recommendations for {s.capitalize()} by {a.capitalize()}...")
         song_features = check_dataset_or_spotify(s, a, df)
 
         if song_features.any:
             print()
             clustering_rec(song_features)
-            print()
             cosine_sim_recs(s, song_features, df)
-            print()
             collaborative_exp(s, a, n=3)
-
 
         print("==" * 30)
         cont = input("Continue? (y/n): ")
